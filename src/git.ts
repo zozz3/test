@@ -2,10 +2,14 @@ import { execFileSync } from "node:child_process";
 import type { ChangedFile } from "./types.js";
 
 function git(repositoryPath: string, args: string[]): string {
-  return execFileSync("git", args, {
-    cwd: repositoryPath,
-    encoding: "utf8",
-  }).trim();
+  try {
+    return execFileSync("git", args, {
+      cwd: repositoryPath,
+      encoding: "utf8",
+    }).trim();
+  } catch {
+    return "";
+  }
 }
 
 export function changedFiles(repositoryPath: string, baseRef?: string): ChangedFile[] {
