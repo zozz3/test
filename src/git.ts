@@ -9,10 +9,10 @@ function git(repositoryPath: string, args: string[]): string {
 }
 
 export function changedFiles(repositoryPath: string, baseRef?: string): ChangedFile[] {
-  const base = baseRef ?? "main";
-  const output = git(repositoryPath, ["diff", "--name-status", `${base}...HEAD`]);
+  const base = baseRef ?? "HEAD~1";
+  const output = git(repositoryPath, ["diff", "--name-status", `${base}..HEAD`]);
 
-  return output
+  const files: ChangedFile[] = output
     .split("\n")
     .filter(Boolean)
     .map((line) => {
@@ -20,4 +20,17 @@ export function changedFiles(repositoryPath: string, baseRef?: string): ChangedF
       const status = code === "A" ? "added" : code === "D" ? "deleted" : "modified";
       return { path: pathParts.join("\t"), status };
     });
+
+  try {
+    const statusOutput = git(repositoryPath, ["status", "--porcelain"]);
+    const untracked = statusOutput
+      .split("\n")
+      .filter((line) => line.startsWith("?? "))
+      .map((line) => ({ path: line.slice(3), status: "untracked" as const }));
+    files.push(...untracked);
+  } catch {
+    // No untracked files or git error
+  }
+
+  return files;
 }
